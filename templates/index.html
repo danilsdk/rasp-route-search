@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <title>Поиск маршрута между городами</title>
+    <!-- Подключаем CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            // Индикатор загрузки при отправке формы
+            const form = document.querySelector("form");
+            form.addEventListener("submit", function () {
+                document.getElementById("loading-overlay").style.display = "flex";
+            });
+
+            // Обновление значения слайдера для количества маршрутов
+            const slider = document.getElementById("count_routes");
+            const sliderValue = document.getElementById("slider_value");
+            if (slider && sliderValue) {
+                sliderValue.textContent = slider.value;
+                slider.addEventListener("input", function () {
+                    sliderValue.textContent = slider.value;
+                });
+            }
+        });
+    </script>
+</head>
+<body>
+<div class="container">
+    <h1>Поиск маршрута между городами</h1>
+    <form method="post">
+        <label for="city_from">Город отправления:</label>
+        <input type="text" id="city_from" name="city_from" required value="{{ request.form.get('city_from', '') }}">
+
+        <label for="city_to">Город назначения:</label>
+        <input type="text" id="city_to" name="city_to" required value="{{ request.form.get('city_to', '') }}">
+
+        <label for="date">Дата и время отправления (YYYY-MM-DD HH:MM:SS):</label>
+        <input type="text" id="date" name="date" value="{{ request.form.get('date', '2025-03-20 18:00:00') }}" required>
+
+        <label for="waiting_time">Максимальное время ожидания для пересадки (часов):</label>
+        <input type="number" id="waiting_time" name="waiting_time" value="{{ request.form.get('waiting_time', 12) }}"
+               required>
+
+        <label>Количество маршрутов: <span id="slider_value">{{ request.form.get('count_routes', 3) }}</span></label>
+        <input type="range" id="count_routes" name="count_routes" min="1" max="10" step="1"
+               value="{{ request.form.get('count_routes', 3) }}">
+
+        <label>Приоритет поиска:</label>
+        <div class="priority-options">
+            <label class="radio-label">
+                <input type="radio" name="priority" value="price" {% if request.form.get('priority', 'price') == 'price'
+                %}checked{% endif %}>
+                <span>Стоимость</span>
+            </label>
+            <label class="radio-label">
+                <input type="radio" name="priority" value="total_duration" {% if request.form.get('priority') ==
+                'total_duration' %}checked{% endif %}>
+                <span>Длительность</span>
+            </label>
+            <label class="radio-label">
+                <input type="radio" name="priority" value="number_of_transfers" {% if request.form.get('priority') ==
+                'number_of_transfers' %}checked{% endif %}>
+                <span>Пересадки</span>
+            </label>
+            <label class="radio-label">
+                <input type="radio" name="priority" value="default" {% if request.form.get('priority') == 'default'
+                %}checked{% endif %}>
+                <span>Смешанный</span>
+            </label>
+        </div>
+
+        <input type="submit" value="Найти маршрут">
+    </form>
+
+    {% if found_routes %}
+    {% if found_routes|length == 0 %}
+    <h2>Маршрут не найден.</h2>
+    {% else %}
+    <h2>Найденные маршруты:</h2>
+    {% for route_str in found_routes %}
+    <div class="route-block">
+        <pre>{{ route_str }}</pre>
+    </div>
+    {% endfor %}
+    {% endif %}
+    {% endif %}
+</div>
+
+<!-- Индикатор загрузки -->
+<div id="loading-overlay">
+    <div class="spinner"></div>
+</div>
+</body>
+</html>
