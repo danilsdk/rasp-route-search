@@ -322,7 +322,7 @@ def find_priority(route: dict, city_to: str, priority_name: str = "price") -> in
         "Санкт-Петербург", "Екатеринбург", "Казань"
     ]
     if route["to"] in cities:
-        priority -= 300
+        priority -= 100
 
     if priority_name == "default":
         return priority
@@ -381,7 +381,7 @@ def find_route(city_from: str, city_to: str, departure_date_str: str, minimum_wa
 
     while not frontier.empty():
         current_priority, current_city, current_arrival = frontier.get()
-        if current_priority > 3000:
+        if current_priority > 7000:
             return None
         print(
             f"DEBUG: Обрабатываем {current_city} с приоритетом {current_priority} и временем прибытия {current_arrival}")
@@ -418,6 +418,12 @@ def find_route(city_from: str, city_to: str, departure_date_str: str, minimum_wa
             path.reverse()
             result_routes.append(path)
             if len(result_routes) == count_find_routes:
+                if priority == "price":
+                    result_routes.sort(key=find_total_price)
+                if priority == "total_duration":
+                    result_routes.sort(key=find_total_duration)
+                if priority == "number_of_transfers":
+                    result_routes.sort(key=find_transfers_count)
                 print(f"DEBUG: Маршруты найдены: {result_routes}")
                 return result_routes
             continue
@@ -525,6 +531,31 @@ def distance_between_cities(city1: str, city2: str) -> float:
     return min_distance
 
 
+def find_total_price(route: list) -> float:
+    """ Находит итоговую стоимость всего маршрута """
+
+    total_price = 0
+    for i in range(len(route)):
+        total_price += route[i]['price']
+    return round(total_price, 2)
+
+
+def find_total_duration(route: list) -> float:
+    """ Находит итоговое время маршрута """
+
+    fmt = '%Y-%m-%d %H:%M:%S'
+    dt1 = datetime.strptime(route[0]['departure_time'], fmt)
+    dt2 = datetime.strptime(route[-1]['arrival_time'], fmt)
+
+    return round((dt2 - dt1).total_seconds() / 3600, 2)
+
+
+def find_transfers_count(route: list) -> int:
+    """ Находит количество пересадок в маршруте """
+
+    return len(route) - 1
+
+
 def routes_info(route_list: list) -> None:
     """ Выводит информацию о маршрутах """
 
@@ -566,5 +597,5 @@ if __name__ == "__main__":
     date = "2025-03-20 18:00:00"
 
     # 12 - максимальное время ожидания для пересадки (в часах)
-    routes = find_route("Екатеринбург", "Москва", date, 12, 3, "duration")
+    routes = find_route("Екатеринбург", "Москва", date, 12, 3, "total_duration")
     routes_info(routes)
